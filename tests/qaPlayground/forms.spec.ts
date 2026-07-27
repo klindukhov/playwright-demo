@@ -181,3 +181,152 @@ test.describe("Address form", () => {
     expect(await page.locator("#bio").inputValue()).toBe("");
   });
 });
+
+test.describe("Interests form", () => {
+  test("should have enabled checkboxes", async ({ page }) => {
+    expect(page.locator("#interest-selenium")).toBeEnabled();
+    expect(page.locator("#interest-playwright")).toBeEnabled();
+    expect(page.locator("#interest-cypress")).toBeEnabled();
+    expect(page.locator("#interest-appium")).toBeEnabled();
+    expect(page.locator("#interest-jest")).toBeEnabled();
+  });
+
+  test("should save the data in accordance with the checked fields", async ({
+    page,
+  }) => {
+    await page.locator("#interest-selenium").check();
+    await page.locator("#interestsSubmitBtn").click();
+    expect(page.locator("#interestsResult")).toHaveText(
+      "Interests saved: Selenium",
+    );
+
+    await page.locator("#interest-selenium").uncheck();
+    await page.locator("#interest-playwright").check();
+    await page.locator("#interestsSubmitBtn").click();
+    expect(page.locator("#interestsResult")).toHaveText(
+      "Interests saved: Playwright",
+    );
+
+    await page.locator("#interest-playwright").uncheck();
+    await page.locator("#interest-cypress").check();
+    await page.locator("#interestsSubmitBtn").click();
+    expect(page.locator("#interestsResult")).toHaveText(
+      "Interests saved: Cypress",
+    );
+
+    await page.locator("#interest-cypress").uncheck();
+    await page.locator("#interest-appium").check();
+    await page.locator("#interestsSubmitBtn").click();
+    expect(page.locator("#interestsResult")).toHaveText(
+      "Interests saved: Appium",
+    );
+
+    await page.locator("#interest-appium").uncheck();
+    await page.locator("#interest-jest").check();
+    await page.locator("#interestsSubmitBtn").click();
+    expect(page.locator("#interestsResult")).toHaveText(
+      "Interests saved: Jest",
+    );
+  });
+
+  test("should get reset on press of the reset button", async ({ page }) => {
+    await page.locator("#interest-selenium").check();
+    await page.locator("#interest-playwright").check();
+    await page.locator("#interest-appium").check();
+    await page.locator("#interest-jest").check();
+    await page.locator("#interest-cypress").check();
+
+    await page.locator('[data-testid="btn-interests-reset"]').click();
+
+    expect(page.locator("#interest-selenium")).not.toBeChecked();
+    expect(page.locator("#interest-playwright")).not.toBeChecked();
+    expect(page.locator("#interest-cypress")).not.toBeChecked();
+    expect(page.locator("#interest-appium")).not.toBeChecked();
+    expect(page.locator("#interest-jest")).not.toBeChecked();
+  });
+});
+
+test.describe("Account setup form", () => {
+  test("should have enabled input fields", async ({ page }) => {
+    expect(page.locator("#password")).toBeEnabled();
+    expect(page.locator("#confirmPassword")).toBeEnabled();
+    expect(page.locator("#terms")).toBeEnabled();
+  });
+
+  test("should display success message on valid input", async ({ page }) => {
+    await page.fill("#password", "123456");
+    await page.fill("#confirmPassword", "123456");
+    await page.locator("#terms").check();
+    await page.locator("#submitFormBtn").click();
+
+    expect(page.locator("#formSuccessMsg")).toHaveText(
+      "✓Account Setup Complete!Your account has been secured.Fill Again",
+    );
+    expect(page.locator('[data-testid="btn-fill-again"]')).toBeVisible();
+  });
+
+  test("should get reset by the fill again button", async ({ page }) => {
+    await page.fill("#password", "123456");
+    await page.fill("#confirmPassword", "123456");
+    await page.locator("#terms").check();
+    await page.locator("#submitFormBtn").click();
+
+    await page.locator('[data-testid="btn-fill-again"]').click();
+    expect(page.locator("#password")).toBeVisible();
+    expect(await page.locator("#password").inputValue()).toBe("");
+    expect(page.locator("#confirmPassword")).toBeVisible();
+    expect(await page.locator("#confirmPassword").inputValue()).toBe("");
+    expect(page.locator("#terms")).toBeVisible();
+    expect(page.locator("#terms")).not.toBeChecked();
+  });
+
+  test("should display correct error message on submit with empty input fields", async ({
+    page,
+  }) => {
+    await page.locator("#terms").check();
+    await page.locator("#submitFormBtn").click();
+
+    expect(page.locator("#passwordError")).toHaveText("Password is required.");
+    expect(page.locator("#confirmPasswordError")).toHaveText(
+      "Please confirm your password.",
+    );
+  });
+
+  test("should display correct error message on too short password", async ({
+    page,
+  }) => {
+    await page.fill("#password", "12345");
+    await page.fill("#confirmPassword", "12345");
+    await page.locator("#terms").check();
+    await page.locator("#submitFormBtn").click();
+
+    expect(page.locator("#passwordError")).toHaveText(
+      "Password must be at least 6 characters.",
+    );
+  });
+
+  test("should display correct error message on not matching passwords", async ({
+    page,
+  }) => {
+    await page.fill("#password", "123456");
+    await page.fill("#confirmPassword", "12345");
+    await page.locator("#terms").check();
+    await page.locator("#submitFormBtn").click();
+
+    expect(page.locator("#confirmPasswordError")).toHaveText(
+      "Passwords do not match.",
+    );
+  });
+
+  test("should display correct error message on not checked terms and conditions", async ({
+    page,
+  }) => {
+    await page.fill("#password", "123456");
+    await page.fill("#confirmPassword", "123456");
+    await page.locator("#submitFormBtn").click();
+
+    expect(page.locator("#termsError")).toHaveText(
+      "You must accept the Terms & Conditions.",
+    );
+  });
+});
