@@ -1,35 +1,230 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, Page, Locator } from "@playwright/test";
+
+test.beforeEach(async ({ page }) => {
+  page.goto("https://qaplayground.com/practice/data-table");
+});
 
 test.describe("Search Bar", () => {
-  test("should be enabled and accept input", async ({ page }) => {});
-  test("should filter the book list on input", async ({ page }) => {});
+  const searchInput = (page: Page): Locator =>
+    page.locator("#table-search-input");
+
+  test("should be enabled and accept input", async ({ page }) => {
+    const input = searchInput(page);
+    await input.fill("Dune");
+
+    expect(input).toBeEnabled();
+    expect(input).toHaveValue("Dune");
+  });
+
+  test("should filter the book list on input", async ({ page }) => {
+    const input = searchInput(page);
+    const rows = page.locator("[data-testid='book-row']");
+
+    await input.fill("Dune");
+    expect(await rows.allInnerTexts()).toHaveLength(1);
+
+    await input.fill("clean");
+    expect(await rows.allInnerTexts()).toHaveLength(2);
+  });
+
   test("should display only the books relevant to the search query", async ({
     page,
-  }) => {});
+  }) => {
+    const input = searchInput(page);
+    const bookNameCells = page.locator(
+      "[data-testid='book-row'] td:nth-child(2)",
+    );
+
+    await input.fill("Dune");
+    let names = await bookNameCells.allInnerTexts();
+    expect(names).toHaveLength(1);
+    expect(names[0]).toBe("Dune");
+
+    await input.fill("clean");
+    names = await bookNameCells.allInnerTexts();
+    expect(names).toHaveLength(2);
+    expect(names[0]).toBe("Clean Code");
+    expect(names[1]).toBe("The Clean Coder");
+  });
   test("should restore the table state on clearing the input", async ({
     page,
-  }) => {});
+  }) => {
+    const input = searchInput(page);
+    const bookNameCells = page.locator(
+      "[data-testid='book-row'] td:nth-child(2)",
+    );
+
+    await input.fill("Dune");
+    let names = await bookNameCells.allInnerTexts();
+    expect(names).toHaveLength(1);
+    expect(names[0]).toBe("Dune");
+
+    await input.clear();
+    names = await bookNameCells.allInnerTexts();
+    expect(names).toHaveLength(5);
+    expect(names[0]).toBe("The Pragmatic Programmer");
+    expect(names[1]).toBe("Clean Code");
+    expect(names[2]).toBe("Design Patterns");
+    expect(names[3]).toBe("The Hobbit");
+    expect(names[4]).toBe("Dune");
+  });
 });
 
 test.describe("Filter dropdown", () => {
-  test("should be enabled", async ({ page }) => {});
-  test("should contain all the expected genres", async ({ page }) => {});
-  test("should filter the book list on change", async ({ page }) => {});
+  const filterDropdown = (page: Page): Locator =>
+    page.locator("#genre-filter-select");
+
+  test("should be enabled", async ({ page }) => {
+    const dropdown = filterDropdown(page);
+    expect(dropdown).toBeEnabled();
+  });
+
+  test("should contain all the expected genres", async ({ page }) => {
+    const dropdown = filterDropdown(page);
+    expect(dropdown).toHaveText(
+      "All GenresTechnologyFantasyScience FictionDystopianFictionNon-Fiction",
+    );
+  });
+
+  test("should filter the book list on change", async ({ page }) => {
+    const dropdown = filterDropdown(page);
+    await dropdown.focus();
+    await page.keyboard.press("Space");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Enter");
+
+    const bookNameCells = page.locator(
+      "[data-testid='book-row'] td:nth-child(2)",
+    );
+
+    const names = await bookNameCells.allInnerTexts();
+    expect(names).toHaveLength(2);
+    expect(names[0]).toBe("1984");
+    expect(names[1]).toBe("Brave New World");
+  });
 });
 
 test.describe("Add book form", () => {
-  test("should open on press of the Add Book button", async ({ page }) => {});
-  test("should contain all the expected fields", async ({ page }) => {});
-  test("should have Name and Author fields required", async ({ page }) => {});
+  test("should open on press of the Add Book button", async ({ page }) => {
+    await page.locator('[data-testid="btn-add-book"]').click();
+
+    expect(page.locator('[data-testid="add-book-dialog"]')).toBeVisible();
+  });
+
+  test("should contain all the expected fields", async ({ page }) => {
+    await page.locator('[data-testid="btn-add-book"]').click();
+
+    expect(page.locator("#add-dialog-title")).toBeVisible();
+
+    expect(page.locator("label[for='add-book-name']")).toBeVisible();
+    expect(page.locator("#add-book-name")).toBeEnabled();
+
+    expect(page.locator("label[for='add-book-author']")).toBeVisible();
+    expect(page.locator("#add-book-author")).toBeEnabled();
+
+    expect(page.locator("label[for='add-book-genre']")).toBeVisible();
+    expect(page.locator("#add-book-genre")).toBeEnabled();
+
+    expect(page.locator("label[for='add-book-published']")).toBeVisible();
+    expect(page.locator("#add-book-published")).toBeEnabled();
+
+    expect(
+      page.locator('[data-testid="add-book-dialog"]').getByText("ISBN"),
+    ).toBeVisible();
+    expect(page.getByPlaceholder("9780000000000")).toBeEnabled();
+
+    expect(page.locator('[data-testid="add-dialog-cancel"]')).toBeEnabled();
+    expect(page.locator('[data-testid="add-dialog-save"]')).toBeEnabled();
+  });
+
+  test("should have Name and Author fields required", async ({ page }) => {
+    await page.locator('[data-testid="btn-add-book"]').click();
+    expect(
+      await page.locator("#add-book-name").getAttribute("aria-required"),
+    ).toBe("true");
+    expect(
+      await page.locator("#add-book-author").getAttribute("aria-required"),
+    ).toBe("true");
+  });
+
   test("should have the genre field with all the expected genres", async ({
     page,
-  }) => {});
+  }) => {
+    await page.locator('[data-testid="btn-add-book"]').click();
+
+    const genres = await page.locator("#add-book-genre option").allInnerTexts();
+
+    expect(genres).toHaveLength(6);
+    expect(genres.join(",")).toBe(
+      "Technology,Fantasy,Science Fiction,Dystopian,Fiction,Non-Fiction",
+    );
+  });
+
   test("should display error messages of Name and Author fields are empty", async ({
     page,
-  }) => {});
-  test("should save the book when the valid input is provided", async ({
+  }) => {
+    await page.locator('[data-testid="btn-add-book"]').click();
+
+    await page.locator('[data-testid="add-dialog-save"]').click();
+
+    expect(page.locator('[data-testid="add-name-error"]')).toBeVisible();
+    expect(page.locator('[data-testid="add-name-error"]')).toHaveText(
+      "Book name is required",
+    );
+    expect(page.locator('[data-testid="add-author-error"]')).toBeVisible();
+    expect(page.locator('[data-testid="add-author-error"]')).toHaveText(
+      "Author is required",
+    );
+  });
+
+  test("should save the book when the valid input is provided an Save is pressed", async ({
     page,
-  }) => {});
+  }) => {
+    await page.locator('[data-testid="btn-add-book"]').click();
+
+    await page.locator('[data-testid="add-input-book-name"]').fill("Book name");
+    await page
+      .locator('[data-testid="add-input-book-author"]')
+      .fill("Author name");
+
+    await page.locator('[data-testid="add-dialog-save"]').click();
+
+    expect(
+      await page
+        .locator('[data-testid="data-table-wrapper"] div')
+        .allInnerTexts(),
+    ).toHaveLength(4);
+
+    await page.locator("#table-search-input").fill("Book name");
+
+    const rows = page.locator("[data-testid='book-row']");
+    expect(await rows.allInnerTexts()).toHaveLength(1);
+  });
+
+  test("should not save the book when Cancel is pressed", async ({ page }) => {
+    await page.locator('[data-testid="btn-add-book"]').click();
+
+    await page.locator('[data-testid="add-input-book-name"]').fill("Book name");
+    await page
+      .locator('[data-testid="add-input-book-author"]')
+      .fill("Author name");
+
+    await page.locator('[data-testid="add-dialog-cancel"]').click();
+
+    expect(
+      await page
+        .locator('[data-testid="data-table-wrapper"] div')
+        .allInnerTexts(),
+    ).toHaveLength(4);
+
+    await page.locator("#table-search-input").fill("Book name");
+
+    const rows = page.locator("[data-testid='book-row']");
+    expect(await rows.allInnerTexts()).toHaveLength(0);
+  });
 });
 
 test.describe("Data table", () => {
