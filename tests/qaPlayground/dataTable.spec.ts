@@ -1,7 +1,7 @@
 import { test, expect, Page, Locator } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
-  page.goto("https://qaplayground.com/practice/data-table");
+  await page.goto("https://qaplayground.com/practice/data-table");
 });
 
 test.describe("Search Bar", () => {
@@ -228,22 +228,130 @@ test.describe("Add book form", () => {
 });
 
 test.describe("Data table", () => {
+  const getTableHead = (page: Page): Locator =>
+    page.locator("thead[data-testid='table-head']");
+  const getTableBody = (page: Page): Locator =>
+    page.locator("tbody[data-testid='table-body']");
+
   test.describe("columns", () => {
-    test("should be all displayed and have correct names", async ({
+    test("should be all displayed and have correct names", async ({ page }) => {
+      const tableHead = getTableHead(page);
+
+      expect(tableHead.locator("th:nth-of-type(1)")).toHaveText("Sr No.");
+      expect(tableHead.locator("th:nth-of-type(2)")).toHaveText("Book Name⇅");
+      expect(tableHead.locator("th:nth-of-type(3)")).toHaveText("Book Genre⇅");
+      expect(tableHead.locator("th:nth-of-type(4)")).toHaveText("Book Author⇅");
+      expect(tableHead.locator("th:nth-of-type(5)")).toHaveText("Book ISBN⇅");
+      expect(tableHead.locator("th:nth-of-type(6)")).toHaveText(
+        "Book Published⇅",
+      );
+      expect(tableHead.locator("th:nth-of-type(7)")).toHaveText("Actions");
+    });
+
+    test("should sort the list ascending on click", async ({ page }) => {
+      const tableHead = getTableHead(page);
+      const srNoCells = getTableBody(page).locator("tr > td:first-child");
+
+      await tableHead.locator("th:nth-of-type(2)").click();
+      expect((await srNoCells.allInnerTexts()).join(",")).toBe("6,23,14,12,2");
+
+      await tableHead.locator("th:nth-of-type(3)").click();
+      expect((await srNoCells.allInnerTexts()).join(",")).toBe("6,12,4,11,18");
+
+      await tableHead.locator("th:nth-of-type(4)").click();
+      expect((await srNoCells.allInnerTexts()).join(",")).toBe("20,12,1,15,13");
+
+      await tableHead.locator("th:nth-of-type(5)").click();
+      expect((await srNoCells.allInnerTexts()).join(",")).toBe("12,16,10,9,20");
+
+      await tableHead.locator("th:nth-of-type(6)").click();
+      expect((await srNoCells.allInnerTexts()).join(",")).toBe("8,23,12,20,4");
+    });
+
+    test("should sort the list descending on second click", async ({
       page,
-    }) => {});
-    test("should sort the list ascending on click", ({ page }) => {});
-    test("should sort the list descending on second click", ({ page }) => {});
-    test("should return the sorting to default on third click", ({
+    }) => {
+      const tableHead = getTableHead(page);
+      const srNoCells = getTableBody(page).locator("tr > td:first-child");
+
+      await tableHead.locator("th:nth-of-type(2)").dblclick();
+      expect((await srNoCells.allInnerTexts()).join(",")).toBe("10,15,21,1,18");
+
+      await tableHead.locator("th:nth-of-type(3)").dblclick();
+      expect((await srNoCells.allInnerTexts()).join(",")).toBe("1,2,3,7,25");
+
+      await tableHead.locator("th:nth-of-type(4)").dblclick();
+      expect((await srNoCells.allInnerTexts()).join(",")).toBe("9,19,2,25,16");
+
+      await tableHead.locator("th:nth-of-type(5)").dblclick();
+      expect((await srNoCells.allInnerTexts()).join(",")).toBe("21,17,18,8,14");
+
+      await tableHead.locator("th:nth-of-type(6)").dblclick();
+      expect((await srNoCells.allInnerTexts()).join(",")).toBe("21,14,15,25,9");
+    });
+
+    test("should return the sorting to default on third click", async ({
       page,
-    }) => {});
+    }) => {
+      const tableHead = getTableHead(page);
+      const srNoCells = getTableBody(page).locator("tr > td:first-child");
+
+      await tableHead.locator("th:nth-of-type(2)").click();
+      await tableHead.locator("th:nth-of-type(2)").click();
+      await tableHead.locator("th:nth-of-type(2)").click();
+
+      expect((await srNoCells.allInnerTexts()).join(",")).toBe("1,2,3,4,5");
+
+      await tableHead.locator("th:nth-of-type(3)").click();
+      await tableHead.locator("th:nth-of-type(3)").click();
+      await tableHead.locator("th:nth-of-type(3)").click();
+
+      expect((await srNoCells.allInnerTexts()).join(",")).toBe("1,2,3,4,5");
+
+      await tableHead.locator("th:nth-of-type(4)").click();
+      await tableHead.locator("th:nth-of-type(4)").click();
+      await tableHead.locator("th:nth-of-type(4)").click();
+
+      expect((await srNoCells.allInnerTexts()).join(",")).toBe("1,2,3,4,5");
+
+      await tableHead.locator("th:nth-of-type(5)").click();
+      await tableHead.locator("th:nth-of-type(5)").click();
+      await tableHead.locator("th:nth-of-type(5)").click();
+
+      expect((await srNoCells.allInnerTexts()).join(",")).toBe("1,2,3,4,5");
+
+      await tableHead.locator("th:nth-of-type(6)").click();
+      await tableHead.locator("th:nth-of-type(6)").click();
+      await tableHead.locator("th:nth-of-type(6)").click();
+
+      expect((await srNoCells.allInnerTexts()).join(",")).toBe("1,2,3,4,5");
+    });
+
     test("should reset pagination to page 1 on sort change", async ({
       page,
-    }) => {});
+    }) => {
+      const tableHead = getTableHead(page);
+      const srNoCells = getTableBody(page).locator("tr > td:first-child");
+
+      const paginationButtons = page
+        .locator('[data-testid="pagination"]')
+        .getByTestId(/pagination-page-\d/);
+
+      await paginationButtons.nth(2).click();
+      expect((await srNoCells.allInnerTexts()).join(",")).toBe(
+        "11,12,13,14,15",
+      );
+      expect(paginationButtons.nth(2)).toHaveAttribute("aria-current", "page");
+
+      await tableHead.locator("th:nth-of-type(2)").click();
+      expect(paginationButtons.nth(2)).not.toHaveAttribute("aria-current");
+      expect(paginationButtons.nth(0)).toHaveAttribute("aria-current", "page");
+    });
   });
 
   test.describe("rows", () => {
     test("should contain the expected values in cells", ({ page }) => {});
+
     test("should be displayed in pages of 5", ({ page }) => {});
     test("should have values starting with ISBN- in the ISBN column", async ({
       page,
