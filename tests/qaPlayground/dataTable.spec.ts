@@ -350,62 +350,282 @@ test.describe("Data table", () => {
   });
 
   test.describe("rows", () => {
-    test("should contain the expected values in cells", ({ page }) => {});
+    test("should contain the expected values in cells", async ({ page }) => {
+      const rows = page.locator('[data-testid="book-row"]');
+      expect((await rows.nth(0).locator("td").allInnerTexts()).join(",")).toBe(
+        "1,The Pragmatic Programmer,Technology,Andrew Hunt,ISBN-9780135957059,1999-10-20,EditDelete",
+      );
+      expect((await rows.nth(4).locator("td").allInnerTexts()).join(",")).toBe(
+        "5,Dune,Science Fiction,Frank Herbert,ISBN-9780441013593,1965-08-01,EditDelete",
+      );
+    });
 
-    test("should be displayed in pages of 5", ({ page }) => {});
+    test("should be displayed in pages of 5", async ({ page }) => {
+      const rows = page.locator('[data-testid="book-row"]');
+
+      expect(await rows.allInnerTexts()).toHaveLength(5);
+    });
+
     test("should have values starting with ISBN- in the ISBN column", async ({
       page,
-    }) => {});
+    }) => {
+      const rows = page.locator('[data-testid="book-row"]');
+
+      const ISBNCells = rows.locator('[data-col="book-isbn"]');
+      expect(
+        (await ISBNCells.allInnerTexts()).every((isbn) =>
+          isbn.startsWith("ISBN-"),
+        ),
+      ).toBe(true);
+    });
 
     test.describe("action cell", () => {
-      test("should contain two buttons with correct text", async ({
-        page,
-      }) => {});
+      test("should contain two buttons with correct text", async ({ page }) => {
+        const rows = page.locator('[data-testid="book-row"]');
+        const actionCell1Buttons = rows
+          .nth(0)
+          .locator('[data-col="actions"] button');
+
+        expect(await actionCell1Buttons.allInnerTexts()).toHaveLength(2);
+        expect(actionCell1Buttons.nth(0)).toHaveText("Edit");
+        expect(actionCell1Buttons.nth(1)).toHaveText("Delete");
+      });
 
       test.describe("Edit button", () => {
-        test("should open the editing pop-up on click", async ({ page }) => {});
+        test("should open the editing pop-up on click", async ({ page }) => {
+          await page.locator('[data-testid="btn-edit-book"]').nth(0).click();
+
+          expect(
+            page.locator('[data-testid="edit-book-dialog"]'),
+          ).toBeVisible();
+        });
 
         test.describe("Edit pop-up", () => {
-          test("should have all expected fields", async ({ page }) => {});
+          test.beforeEach(async ({ page }) => {
+            await page.locator('[data-testid="btn-edit-book"]').nth(0).click();
+          });
+
+          test("should have correct title an subtitle", async ({ page }) => {
+            expect(
+              page.locator('[data-testid="edit-book-dialog"] h2'),
+            ).toHaveText("Edit Book");
+            expect(
+              page.locator('[data-testid="edit-book-dialog"] p'),
+            ).toHaveText("Editing: The Pragmatic Programmer");
+          });
+
+          test("should have all expected fields", async ({ page }) => {
+            expect(page.locator("label[for='edit-book-name']")).toBeVisible();
+            expect(page.locator("#edit-book-name")).toBeEnabled();
+
+            expect(page.locator("label[for='edit-book-author']")).toBeVisible();
+            expect(page.locator("#edit-book-author")).toBeEnabled();
+
+            expect(page.locator("label[for='edit-book-genre']")).toBeVisible();
+            expect(page.locator("#edit-book-genre")).toBeEnabled();
+
+            expect(
+              page.locator("label[for='edit-book-published']"),
+            ).toBeVisible();
+            expect(page.locator("#edit-book-published")).toBeEnabled();
+
+            expect(
+              page
+                .locator('[data-testid="edit-book-dialog"]')
+                .getByText("ISBN"),
+            ).toBeVisible();
+            expect(page.locator('[name="isbn_field_book-001"]')).toBeEnabled();
+
+            expect(
+              page.locator('[data-testid="edit-dialog-cancel"]'),
+            ).toBeEnabled();
+            expect(
+              page.locator('[data-testid="edit-dialog-save"]'),
+            ).toBeEnabled();
+          });
+
           test("should save the edits to the book on Save Changes", async ({
             page,
-          }) => {});
-          test("should discard changes on Cancel", async ({ page }) => {});
+          }) => {
+            await page.locator("#edit-book-name").fill("New Book Name");
+            await page.locator('[data-testid="edit-dialog-save"]').click();
+
+            expect(page.locator('[data-col="book-name"]').nth(1)).toHaveText(
+              "New Book Name",
+            );
+          });
+
+          test("should discard changes on Cancel", async ({ page }) => {
+            await page.locator("#edit-book-name").fill("New Book Name");
+            await page.locator('[data-testid="edit-dialog-cancel"]').click();
+
+            expect(page.locator('[data-col="book-name"]').nth(1)).toHaveText(
+              "The Pragmatic Programmer",
+            );
+          });
         });
       });
 
       test.describe("Delete button", () => {
-        test("should open confirmation pop-up on click", async ({
-          page,
-        }) => {});
+        test.beforeEach(async ({ page }) => {
+          const rows = page.locator('[data-testid="book-row"]');
+          const actionCell1Buttons = rows
+            .nth(0)
+            .locator('[data-col="actions"] button');
+
+          await actionCell1Buttons.nth(1).click();
+        });
+
+        test("should open confirmation pop-up on click", async ({ page }) => {
+          expect(
+            page.locator('[data-testid="delete-book-dialog"]'),
+          ).toBeVisible();
+        });
+
         test("should open confirmation pop-up with correct text", async ({
           page,
-        }) => {});
-        test("should delete the row on confirm", async ({ page }) => {});
+        }) => {
+          expect(
+            page.locator('[data-testid="delete-book-dialog"] h2'),
+          ).toHaveText("Delete Book");
+          expect(
+            page.locator('[data-testid="delete-book-dialog"] p'),
+          ).toHaveText("The Pragmatic Programmer will be permanently removed.");
+          expect(
+            page.locator('[data-testid="delete-book-dialog"] button').nth(0),
+          ).toHaveText("Cancel");
+          expect(
+            page.locator('[data-testid="delete-book-dialog"] button').nth(1),
+          ).toHaveText("Delete");
+        });
+
+        test("should delete the row on confirm", async ({ page }) => {
+          await page
+            .locator('[data-testid="delete-book-dialog"] button')
+            .nth(1)
+            .click();
+
+          expect(page.locator('[data-col="book-name"]').nth(1)).toHaveText(
+            "Clean Code",
+          );
+        });
+
         test("should cancel the deletion of the row on cancel", async ({
           page,
-        }) => {});
+        }) => {
+          await page
+            .locator('[data-testid="delete-book-dialog"] button')
+            .nth(0)
+            .click();
+
+          expect(page.locator('[data-col="book-name"]').nth(1)).toHaveText(
+            "The Pragmatic Programmer",
+          );
+        });
       });
     });
   });
 
   test.describe("footer", () => {
-    test("should have pagination buttons", async ({ page }) => {});
-    test("should have page numbers an number of rows", async ({ page }) => {});
+    test("should have pagination buttons", async ({ page }) => {
+      const footer = page.getByTestId("pagination");
+      const footerButtons = footer.locator("button");
+
+      expect(await footerButtons.allInnerTexts()).toHaveLength(7);
+      expect(footerButtons.nth(0)).toHaveText("‹");
+      expect(footerButtons.nth(1)).toHaveText("1");
+      expect(footerButtons.nth(2)).toHaveText("2");
+      expect(footerButtons.nth(3)).toHaveText("3");
+      expect(footerButtons.nth(4)).toHaveText("4");
+      expect(footerButtons.nth(5)).toHaveText("5");
+      expect(footerButtons.nth(6)).toHaveText("›");
+    });
+
+    test("should have current page number and number of pages/rows displayed", async ({
+      page,
+    }) => {
+      const rowCount = page.getByTestId("row-count");
+      const footerButtons = page.getByTestId("pagination").locator("button");
+
+      expect(rowCount).toHaveText("25 books — page 1 of 5");
+
+      await page.getByText("Delete").nth(0).click();
+      await page
+        .locator('[data-testid="delete-book-dialog"] button')
+        .nth(1)
+        .click();
+
+      await footerButtons.nth(3).click();
+      expect(rowCount).toHaveText("24 books — page 3 of 5");
+    });
+
     test("should switch the page on click of the numbered pagination button", async ({
       page,
-    }) => {});
+    }) => {
+      const rowCount = page.getByTestId("row-count");
+      const footerButtons = page.getByTestId("pagination").locator("button");
+
+      expect(rowCount).toHaveText("25 books — page 1 of 5");
+
+      await footerButtons.nth(3).click();
+      expect(rowCount).toHaveText("25 books — page 3 of 5");
+    });
+
+    test("should update the row count on after deleting a row", async ({
+      page,
+    }) => {
+      const rowCount = page.getByTestId("row-count");
+
+      await page.getByText("Delete").nth(0).click();
+      await page
+        .locator('[data-testid="delete-book-dialog"] button')
+        .nth(1)
+        .click();
+
+      expect(rowCount).toHaveText("24 books — page 1 of 5");
+    });
+
     test("should switch to the next page on click of the > pagination button", async ({
       page,
-    }) => {});
+    }) => {
+      const rowCount = page.getByTestId("row-count");
+      const footerButtons = page.getByTestId("pagination").locator("button");
+
+      expect(rowCount).toHaveText("25 books — page 1 of 5");
+
+      await footerButtons.nth(6).click();
+      expect(rowCount).toHaveText("25 books — page 2 of 5");
+    });
+
     test("should switch to the previous page on click of the < pagination button", async ({
       page,
-    }) => {});
+    }) => {
+      const rowCount = page.getByTestId("row-count");
+      const footerButtons = page.getByTestId("pagination").locator("button");
+
+      expect(rowCount).toHaveText("25 books — page 1 of 5");
+
+      await footerButtons.nth(6).click();
+      expect(rowCount).toHaveText("25 books — page 2 of 5");
+      await footerButtons.nth(0).click();
+      expect(rowCount).toHaveText("25 books — page 1 of 5");
+    });
+
     test("should have the > pagination button disabled on the last page", async ({
       page,
-    }) => {});
+    }) => {
+      const footerButtons = page.getByTestId("pagination").locator("button");
+
+      await footerButtons.nth(5).click();
+      expect(footerButtons.nth(6)).toBeDisabled();
+    });
+
     test("should have the < pagination button disabled on the first page", async ({
       page,
-    }) => {});
+    }) => {
+      const footerButtons = page.getByTestId("pagination").locator("button");
+
+      expect(footerButtons.nth(0)).toBeDisabled();
+    });
   });
 });
