@@ -7,7 +7,9 @@ test.beforeEach(async ({ page }) => {
 test.describe("Home button", () => {
   test("should navigate to home page", async ({ page }) => {
     await page.locator("#navigateHomeBtn").click();
-    expect(page.locator("#result-s01")).toHaveText("Navigated to Home Page");
+    await expect(page.locator("#result-s01")).toHaveText(
+      "Navigated to Home Page",
+    );
   });
 });
 
@@ -17,7 +19,7 @@ test.describe("Find location button", () => {
     await button.click();
     const location = await button.boundingBox();
 
-    expect(page.locator("#result-s02")).toHaveText(
+    await expect(page.locator("#result-s02")).toHaveText(
       `X: ${Math.round(location?.x || 0)}px, Y: ${Math.round(location?.y || 0)}px`,
     );
   });
@@ -33,7 +35,7 @@ test.describe("Find location button", () => {
 
     const location = await button.boundingBox();
 
-    expect(page.locator("#result-s02")).toHaveText(
+    await expect(page.locator("#result-s02")).toHaveText(
       `X: ${Math.round(location?.x || 0)}px, Y: ${Math.round(location?.y || 0)}px`,
     );
   });
@@ -51,7 +53,9 @@ test.describe("Color button", () => {
     await button.focus();
     await page.keyboard.press("Enter");
 
-    expect(page.locator("#result-s03")).toHaveText(`Background: ${color}`);
+    await expect(page.locator("#result-s03")).toHaveText(
+      `Background: ${color}`,
+    );
   });
 });
 
@@ -60,7 +64,7 @@ test.describe("Size button", () => {
     const button = page.locator("#sizeBtn");
     await button.click();
     const buttonSize = await button.boundingBox();
-    expect(page.locator("#result-s04")).toHaveText(
+    await expect(page.locator("#result-s04")).toHaveText(
       `W: ${buttonSize?.width}px, H: ${buttonSize?.height}px`,
     );
   });
@@ -68,7 +72,7 @@ test.describe("Size button", () => {
 
 test.describe("Disabled button", () => {
   test("should be disabled", async ({ page }) => {
-    expect(page.locator("#disabledBtn")).toBeDisabled();
+    await expect(page.locator("#disabledBtn")).toBeDisabled();
   });
 });
 
@@ -80,7 +84,7 @@ test.describe("Click and hold button", () => {
     await page.mouse.down();
     setTimeout(async () => {
       await page.mouse.up();
-      expect(page.locator("#result-s06")).toHaveText("Held for 1.5s");
+      await expect(page.locator("#result-s06")).toHaveText("Held for 1.5s");
     }, 1500);
   });
 
@@ -89,7 +93,9 @@ test.describe("Click and hold button", () => {
   }) => {
     await page.locator("#clickHoldBtn").hover();
     await page.mouse.down();
-    expect(page.locator("#result-s06")).toHaveText("Holding... keep pressing");
+    await expect(page.locator("#result-s06")).toHaveText(
+      "Holding... keep pressing",
+    );
     setTimeout(async () => {
       await page.mouse.up();
     }, 1500);
@@ -99,7 +105,7 @@ test.describe("Click and hold button", () => {
     page,
   }) => {
     await page.locator("#clickHoldBtn").click();
-    expect(page.locator("#result-s06")).toHaveText(
+    await expect(page.locator("#result-s06")).toHaveText(
       "Released too early - hold for 1.5s",
     );
   });
@@ -111,13 +117,15 @@ test.describe("Double Click button", () => {
   }) => {
     await page.locator("#doubleClickBtn").dblclick();
 
-    expect(page.locator("#result-s07")).toHaveText("Double clicked!");
+    await expect(page.locator("#result-s07")).toHaveText("Double clicked!");
   });
 
   test("should not change the value on single click", async ({ page }) => {
     await page.locator("#doubleClickBtn").click();
 
-    expect(page.locator("#result-s07")).toHaveText("Not double-clicked yet");
+    await expect(page.locator("#result-s07")).toHaveText(
+      "Not double-clicked yet",
+    );
   });
 });
 
@@ -127,7 +135,9 @@ test.describe("Right click button", () => {
     await page.mouse.down({ button: "right" });
     await page.mouse.up();
 
-    expect(page.locator("#result-s08")).toHaveText("Context menu triggered!");
+    await expect(page.locator("#result-s08")).toHaveText(
+      "Context menu triggered!",
+    );
   });
 
   test("should not cause the text to change on single click", async ({
@@ -135,6 +145,8 @@ test.describe("Right click button", () => {
   }) => {
     await page.locator("#rightClickBtn").click();
 
-    expect(page.locator("#result-s08")).toHaveText("No action performed yet");
+    await expect(page.locator("#result-s08")).toHaveText(
+      "No action performed yet",
+    );
   });
 });
